@@ -29,13 +29,13 @@ fi
 
 # Update dan instal paket
 echo "Mengupdate daftar paket dan menginstal isc-dhcp-server..."
-sudo apt update -y > /dev/null
+sudo apt-get update -y > /dev/null
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Gagal mengupdate daftar paket!${RESET}"
     exit 1
 fi
 
-sudo apt install -y isc-dhcp-server expect > /dev/null
+sudo apt-get install -y isc-dhcp-server expect > /dev/null
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Berhasil menginstal isc-dhcp-server dan expect!${RESET}"
 else
