@@ -34,7 +34,7 @@ loading_pid=$!
     echo "deb http://kartolo.sby.datautama.net.id/ubuntu/ focal-security main restricted universe multiverse"
     echo "deb http://kartolo.sby.datautama.net.id/ubuntu/ focal-backports main restricted universe multiverse"
     echo "deb http://kartolo.sby.datautama.net.id/ubuntu/ focal-proposed main restricted universe multiverse"
-} | sudo tee /etc/apt/sources.list > /dev/null
+} | sudo tee /etc/apt/sources.list > /dev/null 2>&1
 
 # Cek status exit dari perintah sebelumnya
 if [ $? -eq 0 ]; then
@@ -45,7 +45,7 @@ if [ $? -eq 0 ]; then
     # Lanjutkan dengan perintah berikutnya
     # Contoh perintah tambahan (misalnya update)
     echo "Menjalankan perintah selanjutnya..."
-    sudo apt update
+    sudo apt update > /dev/null 2>&1
 else
     # Jika gagal, hentikan animasi dan tampilkan pesan kesalahan
     kill $loading_pid
