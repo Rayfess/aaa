@@ -64,6 +64,15 @@ check_status() {
         sleep 3
     fi
 }
+
+check_akhir() {
+if [ $? -ne 0 ]; then
+  echo -e "${RED}❌ Terjadi kesalahan pada OTOMASI, Cobalah Lagi!${RESET}"
+  exit 1
+else
+  echo -e "${GREEN}✅ OTOMASI Telah Berhasil Dilakukan!${RESET}"        
+fi
+}
 set -e
 
 # Menampilkan pesan awal
@@ -268,13 +277,7 @@ check_status "Routing Ubuntu dan Mikrotik"
 
 
 # Akhir
-if [ $? -ne 0 ]; then
-  echo -e "${RED}❌ Terjadi kesalahan pada OTOMASI, Cobalah Lagi!${RESET}"
-  exit 1
-else
-  echo -e "${GREEN}✅ OTOMASI Telah Berhasil Dilakukan!${RESET}"        
-fi
-
+check_akhir
 
 # Dokumentasi
 # -eq 0: Mengecek apakah kode status sama dengan 0 (menandakan instalasi berhasil).
