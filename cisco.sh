@@ -1,7 +1,7 @@
 #!/bin/bash
 
 IPNET="192.168.74.137"
-SPORT="30002"
+SPORT="30008"
 
 {
     sleep 1
