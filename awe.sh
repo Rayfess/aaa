@@ -25,9 +25,9 @@ IPROUTE_ADD="192.168.200.1/24"
 #MIKROTIK
 MIKROTIK_IP="192.168.200.1"     # IP MikroTik yang baru
 MIKROTIK_S="192.168.200.0"
-MPORT="30004"
+MPORT="30011"
 #CISCO
-SPORT="30002"
+SPORT="30008"
 
 #Konfigurasi IP Yang Anda Inginkan
 IP_A="17"
@@ -54,17 +54,37 @@ check_status() {
         fi
         echo -e "${RED}❌ Terjadi kesalahan ketika ${custom_message}!${RESET}"
         exit 1
+        sleep 3
     else
         # Jika perintah berhasil
         if [ -z "$custom_message" ]; then
             custom_message="terakhir"
         fi
         echo -e "${GREEN}✅ Perintah ${custom_message} berhasil dijalankan!${RESET}"
+        sleep 3
     fi
 }
 set -e
 
 # Menampilkan pesan awal
+clear
+cat << "EOF
+
+ ██████╗ ████████╗ ██████╗ ███╗   ███╗ █████╗ ███████╗██╗        
+██╔═══██╗╚══██╔══╝██╔═══██╗████╗ ████║██╔══██╗██╔════╝██║        
+██║   ██║   ██║   ██║   ██║██╔████╔██║███████║███████╗██║        
+██║   ██║   ██║   ██║   ██║██║╚██╔╝██║██╔══██║╚════██║██║        
+╚██████╔╝   ██║   ╚██████╔╝██║ ╚═╝ ██║██║  ██║███████║██║        
+ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚═╝        
+
+     ██╗███████╗███╗   ██╗ █████╗ ██████╗      █████╗ ██████╗ ██╗
+     ██║██╔════╝████╗  ██║██╔══██╗██╔══██╗    ██╔══██╗██╔══██╗██║
+     ██║█████╗  ██╔██╗ ██║███████║██████╔╝    ███████║██║  ██║██║
+██   ██║██╔══╝  ██║╚██╗██║██╔══██║██╔══██╗    ██╔══██║██║  ██║██║
+╚█████╔╝███████╗██║ ╚████║██║  ██║██║  ██║    ██║  ██║██████╔╝██║
+ ╚════╝ ╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝    ╚═╝  ╚═╝╚═════╝ ╚═╝                                                              
+EOF
+sleep 5
 echo "Inisialisasi awal ..."
 
 # Menambahkan repositori Kartolo
@@ -85,7 +105,7 @@ echo "Mengupdate daftar paket dan menginstal paket yang diperlukan..."
 sudo apt-get update -y > /dev/null #APTU
 check_status "Update Repositori"
 
-sudo apt-get install -y isc-dhcp-server expect > /dev/null #ISC
+sudo apt-get install -y isc-dhcp-server expect > /dev/null #ISC expect
 check_status "Menginstall Package Yang Diperlukan"
 
 
@@ -164,6 +184,97 @@ sudo netfilter-persistent save > /dev/null
 echo "Restart DHCP Server..."
 sudo systemctl restart isc-dhcp-server
 check_status "Restart isc-dhcp-server"
+
+
+# Masuk Ke Sistem Cisco
+echo "Mencoba untuk terhubung ke Switch Cisco melalui Port $SPORT dengan Telnet..."
+{
+    sleep 1
+    echo "enable"
+    sleep 1
+    echo "configure terminal"
+    sleep 1
+    echo "int e0/1"
+    sleep 1
+    echo "sw mo acc"
+    sleep 1
+    echo "sw acc vl 10"
+    sleep 1
+    echo "exit"
+    sleep 1
+    echo "interface e0/0"
+    sleep 1
+    echo "sw tr encap do"
+    sleep 1
+    echo "sw mo tr"
+    sleep 1
+    echo "exit"
+    sleep 1
+} | telnet $IPNET $SPORT
+check_status "Routing Cisco"
+
+
+# Masuk Ke Sistem Mikrotik
+echo "Mencoba untuk terhubung ke perangkat Mikrotik melalui Port $MPORT dengan Telnet..."
+expect << EOF
+spawn telnet 192.168.74.137 30004
+expect "Mikrotik Login:"
+send "admin\r"
+
+expect "Password:"
+send "\r"
+
+expect ">"
+send "n"
+
+expect "new password"
+send "123\r"
+
+expect "repeat new password"
+send "123\r"
+
+expect ">"
+send "/ip address add address=192.168.200.1/24 interface=ether2\r"
+
+expect ">"
+send "/ip address add address=192.168.17.2/24 interface=ether1\r"
+
+expect ">"
+send "/ip pool add name=dhcp_pool ranges=192.168.200.2-192.168.200.200\r"
+
+expect ">"
+send "/ip dhcp-server add name=dhcp1 interface=ether2 address-pool=dhcp_pool\r"
+
+expect ">"
+send "/ip dhcp-server network add address=192.168.200.0/24 gateway=192.168.200.1 dns-server=8.8.8.8\r"
+
+expect ">"
+send "/ip dhcp-server enable dhcp1\r"
+
+expect ">"
+send "/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade\r"
+
+expect ">"
+send "/ip route add gateway=192.168.17.1\r"
+
+expect eof
+EOF
+
+
+# Routing Ubuntu dan Mikrotik
+echo "Melakukan Routing Ubuntu Ke Mikrotik..."
+sudo ip route add 192.168.200.0 via 192.168.17.2
+check_status "Routing Ubuntu dan Mikrotik"
+
+
+# Akhir
+if [ $? -ne 0 ]; then
+  echo -e "${RED}❌ Terjadi kesalahan pada OTOMASI, Cobalah Lagi!${RESET}"
+  exit 1
+else
+  echo -e "${GREEN}✅ OTOMASI Telah Berhasil Dilakukan!${RESET}"        
+fi
+
 
 # Dokumentasi
 # -eq 0: Mengecek apakah kode status sama dengan 0 (menandakan instalasi berhasil).
