@@ -6,6 +6,64 @@ RED="\e[31m"
 YELLOW="\e[33m"
 RESET="\e[0m"
 
+#Variabel Konfigurasi
+VLAN_INTERFACE="eth1.10"
+VLAN_ID=10
+IP_ADDR="$IP_Router$IP_Pref"      # IP address untuk interface VLAN di Ubuntu
+
+# Destinasi folder
+DHCP_CONF="/etc/dhcp/dhcpd.conf" #Tempat Konfigurasi DHCP
+NETPLAN_CONF="/etc/netplan/01-netcfg.yaml" # Tempat Konfigurasi Netplan
+DDHCP_CONF="/etc/default/isc-dhcp-server" #Tempat konfigurasi default DHCP
+SYSCTL_CONF="/etc/sysctl.conf" #Tempat Konfigurasi IP Forwarding
+
+#Ip PNETLAB
+IPNET="192.168.74.137"
+#ip default perangkat
+IPU="192.168.17.1"
+IPROUTE_ADD="192.168.200.1/24"
+#MIKROTIK
+MIKROTIK_IP="192.168.200.1"     # IP MikroTik yang baru
+MIKROTIK_S="192.168.200.0"
+MPORT="30004"
+#CISCO
+SPORT="30002"
+
+#Konfigurasi IP Yang Anda Inginkan
+IP_A="17"
+IP_B="200"
+IP_C="2"
+IP_BC="255.255.255.0"
+IP_Subnet="192.168.$IP_A.0"
+IP_Router="192.168.$IP_A.1"
+IP_Range="192.168.$IP_A.$IP_C 192.168.$IP_A.$IP_B"
+IP_DNS="8.8.8.8, 8.8.4.4"
+IP_Pref="/24"
+
+# FIX DHCP
+IP_FIX="192.168.17.10"
+IP_MAC="00:50:79:66:68:06"
+
+# Fungsi untuk memeriksa status exit
+check_status() {
+    local custom_message="$1"  # Menyimpan parameter pertama yang diberikan
+    if [ $? -ne 0 ]; then
+        # Jika perintah gagal
+        if [ -z "$custom_message" ]; then  # Jika tidak ada pesan kustom, gunakan pesan default
+            custom_message="terakhir"
+        fi
+        echo -e "${RED}❌ Terjadi kesalahan ketika ${custom_message}!${RESET}"
+        exit 1
+    else
+        # Jika perintah berhasil
+        if [ -z "$custom_message" ]; then
+            custom_message="terakhir"
+        fi
+        echo -e "${GREEN}✅ Perintah ${custom_message} berhasil dijalankan!${RESET}"
+    fi
+}
+set -e
+
 # Menampilkan pesan awal
 echo "Inisialisasi awal ..."
 
@@ -20,28 +78,16 @@ deb http://kartolo.sby.datautama.net.id/ubuntu/ focal-proposed main restricted u
 EOF
 
 # Cek keberhasilan menambahkan repositori
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Berhasil menambahkan repositori!${RESET}"
-else
-    echo -e "${RED}❌ Gagal menambahkan repositori!${RESET}"
-    exit 1
-fi
+check_status "Menambahkan Repositori"
 
-# Update dan instal paket
-echo "Mengupdate daftar paket dan menginstal isc-dhcp-server..."
-sudo apt-get update -y > /dev/null
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Gagal mengupdate daftar paket!${RESET}"
-    exit 1
-fi
+# Update dan instal paket yang diperlukan
+echo "Mengupdate daftar paket dan menginstal paket yang diperlukan..."
+sudo apt-get update -y > /dev/null #APTU
+check_status "Update Repositori"
 
-sudo apt-get install -y isc-dhcp-server expect > /dev/null
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Berhasil menginstal isc-dhcp-server dan expect!${RESET}"
-else
-    echo -e "${RED}❌ Gagal menginstal isc-dhcp-server dan expect!${RESET}"
-    exit 1
-fi
+sudo apt-get install -y isc-dhcp-server expect > /dev/null #ISC
+check_status "Menginstall Package Yang Diperlukan"
+
 
 # Konfigurasi Pada Netplan
 echo "Mengonfigurasi Netplan..."
@@ -62,19 +108,64 @@ network:
 EOF
 
 # Cek keberhasilan konfigurasi Netplan
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Berhasil mengonfigurasi Netplan!${RESET}"
-else
-    echo -e "${RED}❌ Gagal mengonfigurasi Netplan!${RESET}"
-    exit 1
-fi
+check_status "Konfigurasi Netplan"
 
 # Terapkan konfigurasi Netplan
 echo "Menerapkan konfigurasi Netplan..."
 sudo netplan apply
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Konfigurasi Netplan diterapkan!${RESET}"
-else
-    echo -e "${RED}❌ Gagal menerapkan konfigurasi Netplan!${RESET}"
-    exit 1
-fi
+check_status "Menerapkan Netplan"
+
+
+# Mengkonfigurasi DHCP SERVER
+echo "Menerapkan konfigurasi isc-dhcp-server..."
+cat <<EOL | sudo tee $DHCP_CONF > /dev/null
+# Konfigurasi subnet untuk VLAN 10
+subnet $IP_Subnet netmask $IP_BC {
+    range $IP_Range;
+    option routers $IP_Router;
+    option subnet-mask $IP_BC;
+    option domain-name-servers $IP_DNS;
+    default-lease-time 600;
+    max-lease-time 7200;
+}
+# Konfigurasi Fix DHCP *OPTIONAL
+host fantasia {
+  hardware ethernet $IP_MAC;
+  fixed-address $IP_FIX;
+}
+EOL
+cat <<EOL | sudo tee $DDHCP_CONF > /dev/null
+INTERFACESv4="$VLAN_INTERFACE"
+EOL
+check_status "Konfigurasi isc-dhcp-service"
+
+
+# Mengaktifkan IP forwarding dan inisialisasi IPTables
+echo "Mengaktifkan IP forwarding dan mengonfigurasi IPTables..."
+sudo sysctl -w net.ipv4.ip_forward=1 > /dev/null
+echo "net.ipv4.ip_forward=1" | sudo tee -a $SYSCTL_CONF > /dev/null
+check_status "IP Forwarding"
+# Konfigurasi Firewall
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE > /dev/null
+sudo iptables -A OUTPUT -p tcp --dport $SPORT -j ACCEPT > /dev/null
+sudo iptables -A OUTPUT -p tcp --dport $MPORT -j ACCEPT > /dev/null
+sudo ufw allow $SPORT/tcp > /dev/null
+sudo ufw allow $MPORT/tcp > /dev/null
+sudo ufw allow from $IPNET to any port $SPORT > /dev/null
+sudo ufw allow from $IPNET to any port $MPORT > /dev/null
+sudo ufw reload > /dev/null
+check_status "Konfigurasi Firewall"
+# iptables-persistent
+sudo DEBIAN_FRONTEND=noninteractive apt install -y iptables-persistent > /dev/null
+check_status "Instalisasi IPTables-Persistent"
+sudo netfilter-persistent save > /dev/null
+
+# MeRestart Sistem isc-dhcp-server
+echo "Restart DHCP Server..."
+sudo systemctl restart isc-dhcp-server
+check_status "Restart isc-dhcp-server"
+
+# Dokumentasi
+# -eq 0: Mengecek apakah kode status sama dengan 0 (menandakan instalasi berhasil).
+# -ne 0: Mengecek apakah nilai kode status tidak sama dengan 0 (indikasi kegagalan).
+# $?: Menyimpan kode status dari perintah terakhir yang dijalankan. Kode status 0 berarti perintah berhasil, sedangkan nilai lain menunjukkan kegagalan.
