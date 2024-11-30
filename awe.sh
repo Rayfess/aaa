@@ -156,7 +156,7 @@ sudo ufw allow from $IPNET to any port $MPORT > /dev/null
 sudo ufw reload > /dev/null
 check_status "Konfigurasi Firewall"
 # iptables-persistent
-sudo DEBIAN_FRONTEND=noninteractive apt install -y iptables-persistent > /dev/null
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent > /dev/null
 check_status "Instalisasi IPTables-Persistent"
 sudo netfilter-persistent save > /dev/null
 
