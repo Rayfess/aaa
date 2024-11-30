@@ -25,7 +25,7 @@ SPORT="30008"
     sleep 1
     echo "exit"
     sleep 1
-} | telnet $IPNET $SPORT
+} | telnet $IPNET $SPORT > /dev/null
 
 sleep 2
 

@@ -5,7 +5,7 @@ MIKROTIK_IP="192.168.200.1"     # IP MikroTik yang baru
 MIKROTIK_S="192.168.200.0"
 MPORT="30011"
 
-expect << EOF
+expect << EOF > /dev/null
 spawn telnet $IPNET $MPORT
 expect "Mikrotik Login:"
 send "admin\r"

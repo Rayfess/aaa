@@ -208,7 +208,6 @@ echo "Restart DHCP Server..."
 sudo systemctl restart isc-dhcp-server
 check_status "Restart isc-dhcp-server"
 
-
 # Akhir
 check_akhir
 
