@@ -186,17 +186,19 @@ sudo ufw reload > /dev/null
 check_status "Konfigurasi Firewall"
 # iptables-persistent
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent > /dev/null
-check_status "Instalisasi IPTables-Persistent"
+check_status "Instalisasi iptables-Persistent"
 sudo netfilter-persistent save > /dev/null
 
 
 # Masuk Ke Sistem Cisco
-echo "Mencoba untuk terhubung ke Switch Cisco melalui Port $SPORT dengan Telnet..."
+echo "Melakukan Konfigurasi Untuk Cisco..."
 ./cisco.sh
+check_status "Konfigurasi Cisco"
 
 # Masuk Ke Sistem Mikrotik
-echo "Mencoba untuk terhubung ke perangkat Mikrotik melalui Port $MPORT dengan Telnet..."
+echo "Melakukan Konfigurasi Untuk Mikrotik..."
 ./mik.sh
+check_status "Konfigurasi Mikrotik"
 
 # Routing Ubuntu dan Mikrotik
 echo "Melakukan Routing Ubuntu Ke Mikrotik..."
@@ -210,6 +212,7 @@ check_status "Restart isc-dhcp-server"
 
 # Akhir
 check_akhir
+clear
 
 # Dokumentasi
 # -eq 0: Mengecek apakah kode status sama dengan 0 (menandakan instalasi berhasil).
