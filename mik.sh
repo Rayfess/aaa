@@ -3,7 +3,7 @@
 IPNET="192.168.74.137"
 MIKROTIK_IP="192.168.200.1"     # IP MikroTik yang baru
 MIKROTIK_S="192.168.200.0"
-MPORT="30011"
+MPORT="30004"
 
 expect << EOF > /dev/null
 spawn telnet $IPNET $MPORT
@@ -25,8 +25,8 @@ send "123\r"
 expect ">"
 send "/ip address add address=192.168.200.1/24 interface=ether2\r"
 
-expect ">"
-send "/ip address add address=192.168.17.2/24 interface=ether1\r"
+#expect ">"
+#send "/ip address add address=192.168.17.2/24 interface=ether1\r"
 
 expect ">"
 send "/ip pool add name=dhcp_pool ranges=192.168.200.2-192.168.200.200\r"
