@@ -202,7 +202,7 @@ check_status "Konfigurasi Mikrotik"
 
 # Routing Ubuntu dan Mikrotik
 echo "Melakukan Routing Ubuntu Ke Mikrotik..."
-sudo ip route add 192.168.200.0/24 via 192.168.17.2 dev eth1.10
+sudo ip route add 192.168.200.0/24 via 192.168.17.2
 check_status "Routing Ubuntu dan Mikrotik"
 
 # MeRestart Sistem isc-dhcp-server
