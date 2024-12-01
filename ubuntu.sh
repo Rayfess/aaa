@@ -42,7 +42,7 @@ IP_Pref="/24"
 
 # FIX DHCP
 IP_FIX="192.168.17.10"
-IP_MAC="00:50:79:66:68:02"
+IP_MAC="00:50:79:66:68:04"
 
 # Fungsi untuk memeriksa status exit
 check_status() {
