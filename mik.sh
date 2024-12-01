@@ -26,7 +26,7 @@ expect ">"
 send "/ip address add address=192.168.200.1/24 interface=ether2\r"
 
 expect ">"
-send "/ip dhcp-client add interface=ether1 disabled=no"
+send "/ip dhcp-client add interface=ether1 disabled=no\r"
 
 expect ">"
 send "/ip pool add name=dhcp_pool ranges=192.168.200.2-192.168.200.200\r"
