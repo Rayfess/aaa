@@ -15,6 +15,8 @@ SPORT="30005"
     sleep 1
     echo "sw acc vl 10"
     sleep 1
+    echo "no sh"
+    sleep 1
     echo "exit"
     sleep 1
     echo "interface e0/0"
@@ -22,6 +24,8 @@ SPORT="30005"
     echo "sw tr encap do"
     sleep 1
     echo "sw mo tr"
+    sleep 1
+    echo "no sh"
     sleep 1
     echo "exit"
     sleep 1
